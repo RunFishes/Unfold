@@ -118,14 +118,68 @@ function hasSageAttributes(el: HTMLElement): boolean {
 
 // ===== Interactive detection =====
 
-/** Is this element natively interactive (user can click/type on it)? */
+/**
+ * Cursor styles that indicate the element is interactive.
+ * PageAgent found that checking computed cursor style catches ~90% of
+ * custom interactive components (Radix/MUI/Ant Design all set
+ * cursor:pointer on clickable elements).
+ */
+const INTERACTIVE_CURSORS = new Set([
+  "pointer",    // links, buttons, clickable divs
+  "move",       // draggable elements
+  "grab",       // grabbable
+  "grabbing",   // currently grabbed
+  "text",       // text selection (input-like)
+  "cell",       // table cell selection
+]);
+
+/** ARIA roles that mark an element as interactive. */
+const INTERACTIVE_ROLES = new Set([
+  "button",
+  "link",
+  "menuitem",
+  "menuitemcheckbox",
+  "menuitemradio",
+  "tab",
+  "switch",
+  "checkbox",
+  "radio",
+  "combobox",
+  "searchbox",
+  "textbox",
+  "listbox",
+  "option",
+  "slider",
+  "spinbutton",
+]);
+
+/** Is this element interactive (user can click/type on it)? */
 function isInteractive(el: HTMLElement): boolean {
+  // 1. Tag-based (fastest check)
   if (INTERACTIVE_TAGS.has(el.tagName)) return true;
+
+  // 2. Computed cursor style — catches most CSS-framework custom components
+  try {
+    const cursor = getComputedStyle(el).cursor;
+    if (cursor && INTERACTIVE_CURSORS.has(cursor)) return true;
+  } catch {
+    // getComputedStyle can throw on detached elements, ignore
+  }
+
+  // 3. ContentEditable
   if (el.isContentEditable) return true;
-  if (el.getAttribute("role") === "button") return true;
-  if (el.hasAttribute("onclick")) return true;
+
+  // 4. ARIA role
+  const role = el.getAttribute("role");
+  if (role && INTERACTIVE_ROLES.has(role)) return true;
+
+  // 5. Event handler attributes
+  if (el.hasAttribute("onclick") || el.hasAttribute("onmousedown")) return true;
+
+  // 6. Focusable but not a generic container
   if (el.tabIndex >= 0 && el.tagName !== "DIV" && el.tagName !== "SPAN")
     return true;
+
   return false;
 }
 

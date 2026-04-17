@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sage Demo — 任务管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; color: #1a1a1a; }
+    h1 { margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-bottom: 20px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 13px; }
+    td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
+    .status { padding: 2px 8px; border-radius: 10px; font-size: 12px; display: inline-block; }
+    .status-done { background: #dcfce7; color: #166534; }
+    .status-progress { background: #dbeafe; color: #1e40af; }
+    .status-blocked { background: #fef3c7; color: #92400e; }
+    .actions button { padding: 4px 10px; margin-right: 4px; border: 1px solid #d1d5db; border-radius: 4px; background: white; cursor: pointer; font-size: 12px; }
+    .search { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search input { flex: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; }
+    .search select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; }
+    .search button { padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .demo-controls { margin-top: 20px; display: flex; gap: 8px; }
+    .demo-controls button { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
+    .btn-scan { background: #059669; color: white; }
+    .btn-clear { background: #6b7280; color: white; }
+    .console { margin-top: 12px; padding: 12px; background: #1e293b; color: #e2e8f0; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 500px; overflow: auto; }
+  </style>
+</head>
+<body>
+
+  <!-- 顶层页面标注 -->
+  <div sg-id="task-app" sg-kind="page" sg-title="任务管理">
+
+    <h1>Sage Demo — 任务管理</h1>
+    <p class="subtitle">
+      打开 DevTools Console，输入 <code>window.__sage__.scan()</code> 查看结构化数据，
+      或点下面的 "Run Scan" 按钮。
+    </p>
+
+    <!-- 搜索/筛选区 -->
+    <div class="search"
+         sg-id="filters"
+         sg-kind="region"
+         sg-title="任务筛选"
+         sg-desc="筛选区：支持按关键词搜索任务标题、按状态筛选(all/进行中/已完成/阻塞)、按负责人筛选(all/张三/李四/王五)。搜索为模糊匹配。">
+      <input
+        sg-id="search-input"
+        sg-kind="field"
+        sg-title="搜索框"
+        placeholder="搜索任务..."
+      />
+      <select
+        sg-id="status-filter"
+        sg-kind="field"
+        sg-title="状态筛选">
+        <option value="all">全部状态</option>
+        <option value="progress">进行中</option>
+        <option value="done">已完成</option>
+        <option value="blocked">阻塞</option>
+      </select>
+      <select
+        sg-id="assignee-filter"
+        sg-kind="field"
+        sg-title="负责人筛选">
+        <option value="all">全部成员</option>
+        <option value="zhangsan">张三</option>
+        <option value="lisi">李四</option>
+        <option value="wangwu">王五</option>
+      </select>
+      <button sg-id="search-btn" sg-kind="action" sg-title="搜索">搜索</button>
+    </div>
+
+    <!-- 导航区（用 sg-entity 折叠，AI 看不到子节点细节，只看摘要） -->
+    <nav sg-id="main-nav"
+         sg-kind="region"
+         sg-entity="侧边导航：首页 / 任务 / 项目 / 团队 / 设置"
+         style="padding: 8px 12px; background: #f9fafb; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+      <a href="#">首页</a> ·
+      <a href="#">任务</a> ·
+      <a href="#">项目</a> ·
+      <a href="#">团队</a> ·
+      <a href="#">设置</a>
+    </nav>
+
+    <!-- 任务列表 -->
+    <table sg-id="task-list" sg-kind="list" sg-title="任务列表">
+      <thead>
+        <tr>
+          <th>任务</th>
+          <th>状态</th>
+          <th>负责人</th>
+          <th>截止日期</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr sg-id="task-001" sg-kind="item">
+          <td>首页性能优化</td>
+          <td><span class="status status-progress">进行中</span></td>
+          <td>张三</td>
+          <td>2026-04-20</td>
+          <td class="actions">
+            <button sg-id="task-001-detail" sg-kind="action" sg-title="详情">详情</button>
+            <button sg-id="task-001-done" sg-kind="action" sg-title="完成">完成</button>
+          </td>
+        </tr>
+        <tr sg-id="task-002" sg-kind="item">
+          <td>用户权限重构</td>
+          <td><span class="status status-blocked">阻塞</span></td>
+          <td>李四</td>
+          <td>2026-04-18</td>
+          <td class="actions">
+            <button sg-id="task-002-detail" sg-kind="action" sg-title="详情">详情</button>
+          </td>
+        </tr>
+        <tr sg-id="task-003" sg-kind="item">
+          <td>订单导出功能</td>
+          <td><span class="status status-done">已完成</span></td>
+          <td>王五</td>
+          <td>2026-04-15</td>
+          <td class="actions">
+            <button sg-id="task-003-detail" sg-kind="action" sg-title="详情">详情</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 带 sg-tool 的审批组件 -->
+    <div sg-id="quick-approve"
+         sg-kind="action"
+         sg-title="快速审批"
+         sg-tool="task.approve"
+         sg-desc="快速审批当前任务。Params: { taskId: 'task-001'|'task-002'|'task-003', decision: 'approve'|'reject', comment?: string }。approve 会将任务推进到下一阶段，reject 会打回给负责人。"
+         style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+      <strong>快速审批</strong>
+      <span style="color: #6b7280; font-size: 13px;"> — 选择任务后一键审批通过或驳回</span>
+    </div>
+
+    <!-- Demo 控制按钮 -->
+    <div class="demo-controls">
+      <button id="btn-scan" class="btn-scan">Run Scan</button>
+      <button id="btn-clear" class="btn-clear">Clear</button>
+    </div>
+
+    <!-- 输出区 -->
+    <div id="output" class="console">// 点 "Run Scan" 或在 Console 输入 window.__sage__.scan()</div>
+  </div>
+
+  <script type="module">
+    import { initSage } from "../dist/index.js";
+
+    const sage = initSage();
+
+    document.getElementById("btn-scan").addEventListener("click", () => {
+      const result = sage.scan();
+      document.getElementById("output").textContent = result.text;
+    });
+
+    document.getElementById("btn-clear").addEventListener("click", () => {
+      document.getElementById("output").textContent = "// Cleared";
+    });
+  </script>
+</body>
+</html>

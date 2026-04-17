@@ -71,3 +71,12 @@ export interface SageConfig {
   /** Max chars of visible text to include per node. Default: 100. */
   maxTextLength?: number;
 }
+
+// ===== Action result =====
+
+export interface ActionResult {
+  success: boolean;
+  error?: string;
+  /** Extra data returned by the action (e.g. tool call result). */
+  [key: string]: unknown;
+}
